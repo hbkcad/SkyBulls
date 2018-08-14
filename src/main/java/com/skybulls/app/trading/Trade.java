@@ -2,20 +2,18 @@ package com.skybulls.app.trading;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.skybulls.app.model.Stock;
 
 public class Trade {
-	String fileloc = "src/main/resources/json.csv";
+	String fileloc = "src/main/resources/AXISBANK.csv";
 	
-	@SuppressWarnings("unchecked")
 	public void trading() {	
 	try {
 	FileReader file = new FileReader(fileloc);
@@ -25,69 +23,92 @@ public class Trade {
             .build();
 	List<Stock> stocks = csvToBean.parse();
 	
-	
-	JSONArray json = new JSONArray();
-	int count =0;
-	JSONObject jobject = null;
-	for(Stock stock : stocks) {
-		count++;
-		if(count>8) {
-			stock.setVwma50(vwma50(stock,json));
-		}
-	jobject = new JSONObject(stock);
-	
-	int date = Integer.parseInt(stock.getDateTime().substring(0, 5).replace("/",""));
-	System.out.println(date);
-	try {
+	double arrprod[] = new double[30000];
+	double arrsum[] = new double[32000];
+	double sum = 0;
+	double prod = 0;
+	int i =0;
+	for(Stock s : stocks) {
+		sum = sum + s.getVolume();
+		prod = prod + (s.getRate()*s.getVolume());
+		arrprod[i] = prod;
+		arrsum[i] = sum;
 		
-		json.put(date,jobject);
-		//System.out.println(json);
-	} catch (JSONException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
-	/*if(count>8) {
-		int t = count;
-		double vwma = Double.parseDouble(json.get(t))*Double.parseDouble((Double) json.get(t));
-		json.put(vwma);
-	}*/
-	
-	}
-	
-	//System.out.println(jobject);
-	/*try {
-		for(int i =0; i<10;i++) {
-			
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yy HH:mm");
+        try
+        {
+            Date date = simpleDateFormat.parse(s.getDateTime());
+
+            s.setDateTime((simpleDateFormat.format(date)));
+        }
+        catch (ParseException ex)
+        {
+            System.out.println("Exception "+ex);
+        }
+	    
+		/*s.setCumProd(arrprod[i]);
+		s.setCumSum(arrsum[i]);*/
+		if(i>50) {
+		double vwma5 = ((arrprod[i] - arrprod[i-50])/(arrsum[i] - arrsum[i-50]));
+		s.setVwma50(vwma5);
 		}
-		System.out.println(json.get(0));
-	} catch (JSONException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}*/
-	//System.out.println(json.optString(0));
+		if(i>200) {
+			double vwma8 = ((arrprod[i] - arrprod[i-200])/(arrsum[i] - arrsum[i-200]));
+			s.setVwma200(vwma8);
+		}
+		i++;
+				System.out.println(s.getDateTime() + "	   " + s.getRate() + "         "
+						+ s.getVolume() + "        " + s.getVwma50() + "    "
+						+ s.getVwma200());
+				
+				
+	}
+	//System.out.println(stocks.get(0).getVwma50());
+	calculate(stocks);
 	
-	//TreeMap<String,Double> tmap = new TreeMap<>();
-	//List<String> list_volume = new ArrayList<String>(); 
-	/*for(Stock stock: stocks) {
-	    System.out.println("DateTime : " + stock.getDateTime());
-	    System.out.println("Rate : " + stock.getRate());
-	    System.out.println("Volume : " + stock.getVolume());
-	    System.out.println("==========================");*/
-	    //list_volume.add(stock.getDateTime());
-	    //tmap.put(stock.getDateTime(),(stock.getRate())*stock.getVolume());
-	
-	/*int i=0;
-	for(Entry<String, Double> entry : tmap.entrySet()) {
 		
-	}*/
+		
+	
+	
+	
+	
 	}catch(FileNotFoundException f) {
 		
 	}
 }
-	private double vwma50(Stock stock, JSONArray json) {
+	private void calculate(List<Stock> stocks) {
+		double buy = 0;
+		double sell = 0;
+		double profit = 0;
+		boolean purchased = false;
+		for(Stock stock:stocks) {
+		if(stock.getDateTime().contains("9:30") && stock.getVwma50()< stock.getVwma200()) {
+			for(Stock stoc :stocks) {
+				if(stoc.getVwma50()> stoc.getVwma200() && !stock.getDateTime().matches("^1[3-5]:30$")) {
+					buy = stoc.getRate();
+					System.out.println("Stock purchased @ "+buy);
+					purchased =true;
+					
+				}
+				if(stoc.getVwma50() < stoc.getVwma200() && !stock.getDateTime().matches("^1[3-5]:30$") &&purchased) {
+					sell = stoc.getRate();
+					System.out.println("Stock sold @ "+sell);
+				}
+			}
+			profit = sell - buy;
+			sell = buy = profit =0;
+			System.out.println("profit obtaines=="+profit);
+			
+		}	}
+		}
 		
-		return 0;
-	}
+		
+		
+		
+		
+		
+	
+	
 	
 	public static void main(String args[]) {
 		Trade trade = new Trade();

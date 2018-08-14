@@ -1,17 +1,30 @@
 package com.skybulls.app.model;
 
+import java.util.Date;
+
 import com.opencsv.bean.CsvBindByPosition;
 
 public class Stock {
-	
+
 	@CsvBindByPosition(position = 0)
 	private String dateTime;
 	@CsvBindByPosition(position = 1)
 	private double rate;
 	@CsvBindByPosition(position = 2)
 	private double volume;
-	
+
+	private Date date;
+
+	public Date getDate() {
+		return date;
+	}
+
+	public void setDate(Date date) {
+		this.date = date;
+	}
+
 	private double vwma50;
+
 	public double getVwma50() {
 		return vwma50;
 	}
@@ -29,7 +42,7 @@ public class Stock {
 	}
 
 	private double vwma200;
-	
+
 	public String getDateTime() {
 		return dateTime;
 	}
@@ -53,8 +66,5 @@ public class Stock {
 	public void setVolume(double volume) {
 		this.volume = volume;
 	}
-
-	
-	
 
 }
